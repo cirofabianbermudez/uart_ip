@@ -1,104 +1,118 @@
-`timescale 1ns / 100ps
-
-// Oversamplig = 16
-//      F_fpga = 100_000_000
-//    BaudRate = 115200
+///////////////////////////////////////////////////////////////////////////////////
+// [Filename]       uart_tx.sv
+// [Project]        uart_ip
+// [Author]         Ciro Bermudez
+// [Language]       SystemVerilog 2017 [IEEE Std. 1800-2017]
+// [Created]        2024.06.22
+// [Description]    UART Transmitter Module.
+// [Notes]          This code uses an oversamplig of 16.
+//                  Asynchronous active high reset signal
+//                  The number of stop bits can be set to 1, 1.5, or 2.
+//                  This code does not consider the parity bit.
+// [Status]         Stable
+///////////////////////////////////////////////////////////////////////////////////
 
 module uart_tx #(
-  parameter WordLength = 8,
-  parameter StopBitTicks = 16
-) ( 
-  input  logic       clk,
-  input  logic       rst,
-  input  logic       start_tx_i,
-  input  logic       tick_i,
-  input  logic [7:0] din_i,
-  output logic       tx_o,
-  output logic       eotx_o
+    parameter int WordLength   = 8,
+    parameter int StopBitTicks = 16
+) (
+    input  logic       clk_i,
+    input  logic       rst_i,
+    input  logic       start_tx_i,
+    input  logic       sample_tick_i,
+    input  logic [7:0] din_i,
+    output logic       tx_o,
+    output logic       tx_done_tick_o
 );
 
-  typedef enum {idle , start, data , stop} state_type;
+  typedef enum {
+    IDLE,
+    START,
+    DATA,
+    STOP
+  } state_type_e;
 
-  state_type  state_reg, state_next;  // State register
-  logic [3:0] s_reg    , s_next;      // Sample ticks counter
-  logic [2:0] n_reg    , n_next;      // Data bit counter
-  logic [7:0] b_reg    , b_next;      // Data buffer shift register
-  logic       tx_reg   , tx_next;     // Sequential output
-  
-  always_ff @(posedge clk, posedge rst) begin
-    if (rst_i) begin 
-      state_reg <= idle;
-          s_reg <= 0;
-          n_reg <= 0;
-          b_reg <= 0;
-         tx_reg <= 1'b1;
+  state_type_e state_reg, state_next;
+  logic [3:0] sample_tick_counter_d, sample_tick_counter_q;
+  logic [2:0] data_bit_counter_d, data_bit_counter_q;
+  logic [7:0] data_shift_buffer_d, data_shift_buffer_d;
+  logic tx_d, tx_q;
+
+  always_ff @(posedge clk_i, posedge rst_i) begin
+    if (rst_i) begin
+      state_reg             <= IDLE;
+      sample_tick_counter_d <= 'd0;
+      data_bit_counter_d    <= 'd0;
+      data_shift_buffer_d   <= 'd0;
+      tx_d                  <= 1'b1;
     end else begin
-      state_reg <= state_next;
-          s_reg <= s_next;
-          n_reg <= n_next;
-          b_reg <= b_next;
-         tx_reg <= tx_next;
+      state_reg             <= state_next;
+      sample_tick_counter_d <= sample_tick_counter_q;
+      data_bit_counter_d    <= data_bit_counter_q;
+      data_shift_buffer_d   <= data_shift_buffer_d;
+      tx_d                  <= tx_q;
     end
   end
-  
+
   always_comb begin
-    state_next = state_reg;
-    eotx_o   = 1'b0;
-    s_next  = s_reg;
-    n_next  = n_reg;
-    b_next  = b_reg;
-    tx_next = tx_reg;
+    state_next            = state_reg;
+    tx_done_tick_o        = 1'b0;
+    sample_tick_counter_q = sample_tick_counter_d;
+    data_bit_counter_q    = data_bit_counter_d;
+    data_shift_buffer_d   = data_shift_buffer_d;
+    tx_q                  = tx_d;
     case (state_reg)
-      idle: begin
-              tx_next = 1'b1;
-              if (start_tx_i) begin
-                state_next = start;
-                s_next = 0;
-                b_next = din_i;
-              end
+      IDLE: begin
+        tx_q = 1'b1;
+        if (start_tx_i) begin
+          state_next            = START;
+          sample_tick_counter_q = 'd0;
+          data_shift_buffer_d   = din_i;
+        end
+      end
+      START: begin
+        tx_q = 1'b0;
+        if (sample_tick_i) begin
+          if (sample_tick_counter_d == 'd15) begin
+            state_next            = DATA;
+            sample_tick_counter_q = 'd0;
+            data_bit_counter_q    = 'd0;
+          end else begin
+            sample_tick_counter_q = sample_tick_counter_d + 'd1;
+          end
+        end
+      end
+      DATA: begin
+        tx_q = data_shift_buffer_d[0];
+        if (sample_tick_i) begin
+          if (sample_tick_counter_d == 'd15) begin
+            sample_tick_counter_q = 'd0;
+            data_shift_buffer_d   = data_shift_buffer_d >> 1;
+            if (data_bit_counter_d == (WordLength - 1)) begin
+              state_next = STOP;
+            end else begin
+              data_bit_counter_q = data_bit_counter_d + 'd1;
             end
-     start: begin
-              tx_next = 1'b0;
-              if (tick_i) begin
-                if (s_reg == 15) begin
-                  state_next = data;
-                  s_next = 0;
-                  n_next = 0;
-                end else begin
-                  s_next = s_reg + 1;
-                end
-              end
-            end
-      data: begin
-              tx_next = b_reg[0];
-              if (tick_i) begin
-                if (s_reg == 15) begin
-                  s_next = 0;
-                  b_next = b_reg >> 1;
-                  if (n_reg == (WordLength-1)) begin
-                    state_next = stop;
-                  end else begin
-                    n_next = n_reg + 1;
-                  end
-                end else begin
-                  s_next = s_reg + 1;
-                end
-              end
-            end
-      stop: begin
-              tx_next = 1'b1;
-              if (tick_i) begin
-                if (s_reg == (StopBitTicks-1)) begin
-                  state_next = idle;
-                  eotx_o = 1'b1;
-                end else begin
-                  s_next = s_reg + 1;
-                end
-              end
-            end
+          end else begin
+            sample_tick_counter_q = sample_tick_counter_d + 'd1;
+          end
+        end
+      end
+      STOP: begin
+        tx_q = 1'b1;
+        if (sample_tick_i) begin
+          if (sample_tick_counter_d == (StopBitTicks - 1)) begin
+            state_next     = IDLE;
+            tx_done_tick_o = 1'b1;
+          end else begin
+            sample_tick_counter_q = sample_tick_counter_d + 'd1;
+          end
+        end
+      end
     endcase
   end
-  
-  assign tx_o = tx_reg;
-  
-endmodule
+
+  assign tx_o = tx_d;
+
+endmodule : uart_tx
+

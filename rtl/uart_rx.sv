@@ -1,94 +1,108 @@
-`timescale 1ns / 100ps
-
-// Oversamplig = 16
-//      F_fpga = 100_000_000
-//    BaudRate = 115200
+///////////////////////////////////////////////////////////////////////////////////
+// [Filename]       uart_rx.sv
+// [Project]        uart_ip
+// [Author]         Ciro Bermudez
+// [Language]       SystemVerilog 2017 [IEEE Std. 1800-2017]
+// [Created]        2024.06.22
+// [Description]    UART Receiver Module.
+// [Notes]          This code uses an oversamplig of 16.
+//                  Asynchronous active high reset signal
+//                  The number of stop bits can be set to 1, 1.5, or 2.
+//                  This code does not consider the parity bit.
+// [Status]         Stable
+///////////////////////////////////////////////////////////////////////////////////
 
 module uart_rx #(
-  parameter WordLength = 8,
-  parameter StopBitTicks = 16
-) ( 
-  input  logic       clk_i,
-  input  logic       rst_i,
-  input  logic       rx_i,
-  input  logic       tick_i,
-  output logic       eorx_o,
-  output logic [7:0] dout_o
+    parameter int WordLength   = 8,
+    parameter int StopBitTicks = 16
+) (
+    input  logic       clk_i,
+    input  logic       rst_i,
+    input  logic       rx_i,
+    input  logic       sample_tick_i,
+    output logic       rx_done_tick_o,
+    output logic [7:0] dout_o
 );
 
-  typedef enum {idle , start, data, stop} state_type;
+  typedef enum {
+    IDLE,
+    START,
+    DATA,
+    STOP
+  } state_type_e;
 
-  state_type  state_reg, state_next; // State register
-  logic [3:0]     s_reg, s_next;     // Sample ticks counter
-  logic [2:0]     n_reg, n_next;     // Data bit counter
-  logic [7:0]     b_reg, b_next;     // Data buffer shift register
-  
+  state_type_e state_reg, state_next;
+  logic [3:0] sample_tick_counter_d, sample_tick_counter_q;
+  logic [2:0] data_bit_counter_d, data_bit_counter_q;
+  logic [7:0] data_shift_buffer_d, data_shift_buffer_q;
+
   always_ff @(posedge clk_i, posedge rst_i) begin
-    if (rst_i) begin 
-      state_reg <= idle;
-          s_reg <= 0;
-          n_reg <= 0;
-          b_reg <= 0;
+    if (rst_i) begin
+      state_reg             <= IDLE;
+      sample_tick_counter_d <= 'd0;
+      data_bit_counter_d    <= 'd0;
+      data_shift_buffer_d   <= 'd0;
     end else begin
       state_reg <= state_next;
-          s_reg <= s_next;
-          n_reg <= n_next;
-          b_reg <= b_next;
+      sample_tick_counter_d <= sample_tick_counter_q;
+      data_bit_counter_d    <= data_bit_counter_q;
+      data_shift_buffer_d   <= data_shift_buffer_q;
     end
   end
-  
+
   always_comb begin
-    state_next = state_reg;
-    eorx_o = 1'b0;
-    s_next = s_reg;
-    n_next = n_reg;
-    b_next = b_reg;
+    state_next            = state_reg;
+    rx_done_tick_o        = 1'b0;
+    sample_tick_counter_q = sample_tick_counter_d;
+    data_bit_counter_q    = data_bit_counter_d;
+    data_shift_buffer_q   = data_shift_buffer_d;
     case (state_reg)
-      idle: begin
-              if (~rx_i) begin
-                state_next = start;
-                s_next = 0;
-              end
+      IDLE: begin
+        if (~rx_i) begin
+          state_next            = START;
+          sample_tick_counter_q = 'd0;
+        end
+      end
+      START: begin
+        if (sample_tick_i) begin
+          if (sample_tick_counter_d == 'd7) begin
+            state_next            = DATA;
+            sample_tick_counter_q = 'd0;
+            data_bit_counter_q    = 'd0;
+          end else begin
+            sample_tick_counter_q = sample_tick_counter_d + 'd1;
+          end
+        end
+      end
+      DATA: begin
+        if (sample_tick_i) begin
+          if (sample_tick_counter_d == 'd15) begin
+            sample_tick_counter_q = 'd0;
+            data_shift_buffer_q   = {rx_i, data_shift_buffer_d[7:1]};
+            if (data_bit_counter_d == (WordLength - 1)) begin
+              state_next = STOP;
+            end else begin
+              data_bit_counter_q = data_bit_counter_d + 'd1;
             end
-     start: begin
-              if (tick_i) begin
-                if (s_reg == 7) begin
-                  state_next = data;
-                  s_next = 0;
-                  n_next = 0;
-                end else begin
-                  s_next = s_reg + 1;
-                end
-              end
-            end
-      data: begin
-              if (tick_i) begin
-                if (s_reg == 15) begin
-                  s_next = 0;
-                  b_next = {rx_i, b_reg[7:1]};
-                  if (n_reg == (WordLength-1)) begin
-                    state_next = stop;
-                  end else begin
-                    n_next = n_reg + 1;
-                  end
-                end else begin
-                  s_next = s_reg + 1;
-                end
-              end
-            end
-      stop: begin
-              if (tick_i) begin
-                if (s_reg == (StopBitsTicks-1)) begin
-                  state_next = idle;
-                  eorx_o = 1'b1;
-                end else begin
-                  s_next = s_reg + 1;
-                end
-              end
-            end
+          end else begin
+            sample_tick_counter_q = sample_tick_counter_d + 'd1;
+          end
+        end
+      end
+      STOP: begin
+        if (sample_tick_i) begin
+          if (sample_tick_counter_d == (StopBitsTicks - 1)) begin
+            state_next = IDLE;
+            rx_done_tick_o = 1'b1;
+          end else begin
+            sample_tick_counter_q = sample_tick_counter_d + 'd1;
+          end
+        end
+      end
     endcase
   end
-  
-  assign dout_o = b_reg;
-  
-endmodule
+
+  assign dout_o = data_shift_buffer_d;
+
+endmodule : uart_rx
+
