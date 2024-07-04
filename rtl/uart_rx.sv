@@ -32,77 +32,77 @@ module uart_rx #(
   } state_type_e;
 
   state_type_e state_reg, state_next;
-  logic [3:0] sample_tick_counter_d, sample_tick_counter_q;
-  logic [2:0] data_bit_counter_d, data_bit_counter_q;
-  logic [7:0] data_shift_buffer_d, data_shift_buffer_q;
+  logic [3:0] sample_tick_counter_q, sample_tick_counter_d;
+  logic [2:0] data_bit_counter_q, data_bit_counter_d;
+  logic [7:0] data_shift_buffer_q, data_shift_buffer_d;
 
   always_ff @(posedge clk_i, posedge rst_i) begin
     if (rst_i) begin
       state_reg             <= IDLE;
-      sample_tick_counter_d <= 'd0;
-      data_bit_counter_d    <= 'd0;
-      data_shift_buffer_d   <= 'd0;
+      sample_tick_counter_q <= 'd0;
+      data_bit_counter_q    <= 'd0;
+      data_shift_buffer_q   <= 'd0;
     end else begin
       state_reg <= state_next;
-      sample_tick_counter_d <= sample_tick_counter_q;
-      data_bit_counter_d    <= data_bit_counter_q;
-      data_shift_buffer_d   <= data_shift_buffer_q;
+      sample_tick_counter_q <= sample_tick_counter_d;
+      data_bit_counter_q    <= data_bit_counter_d;
+      data_shift_buffer_q   <= data_shift_buffer_d;
     end
   end
 
   always_comb begin
     state_next            = state_reg;
     rx_done_tick_o        = 1'b0;
-    sample_tick_counter_q = sample_tick_counter_d;
-    data_bit_counter_q    = data_bit_counter_d;
-    data_shift_buffer_q   = data_shift_buffer_d;
+    sample_tick_counter_d = sample_tick_counter_q;
+    data_bit_counter_d    = data_bit_counter_q;
+    data_shift_buffer_d   = data_shift_buffer_q;
     case (state_reg)
       IDLE: begin
         if (~rx_i) begin
           state_next            = START;
-          sample_tick_counter_q = 'd0;
+          sample_tick_counter_d = 'd0;
         end
       end
       START: begin
         if (sample_tick_i) begin
-          if (sample_tick_counter_d == 'd7) begin
+          if (sample_tick_counter_q == 'd7) begin
             state_next            = DATA;
-            sample_tick_counter_q = 'd0;
-            data_bit_counter_q    = 'd0;
+            sample_tick_counter_d = 'd0;
+            data_bit_counter_d    = 'd0;
           end else begin
-            sample_tick_counter_q = sample_tick_counter_d + 'd1;
+            sample_tick_counter_d = sample_tick_counter_q + 'd1;
           end
         end
       end
       DATA: begin
         if (sample_tick_i) begin
-          if (sample_tick_counter_d == 'd15) begin
-            sample_tick_counter_q = 'd0;
-            data_shift_buffer_q   = {rx_i, data_shift_buffer_d[7:1]};
-            if (data_bit_counter_d == (WordLength - 1)) begin
+          if (sample_tick_counter_q == 'd15) begin
+            sample_tick_counter_d = 'd0;
+            data_shift_buffer_d   = {rx_i, data_shift_buffer_q[7:1]};
+            if (data_bit_counter_q == (WordLength - 1)) begin
               state_next = STOP;
             end else begin
-              data_bit_counter_q = data_bit_counter_d + 'd1;
+              data_bit_counter_d = data_bit_counter_q + 'd1;
             end
           end else begin
-            sample_tick_counter_q = sample_tick_counter_d + 'd1;
+            sample_tick_counter_d = sample_tick_counter_q + 'd1;
           end
         end
       end
       STOP: begin
         if (sample_tick_i) begin
-          if (sample_tick_counter_d == (StopBitsTicks - 1)) begin
+          if (sample_tick_counter_q == (StopBitsTicks - 1)) begin
             state_next = IDLE;
             rx_done_tick_o = 1'b1;
           end else begin
-            sample_tick_counter_q = sample_tick_counter_d + 'd1;
+            sample_tick_counter_d = sample_tick_counter_q + 'd1;
           end
         end
       end
     endcase
   end
 
-  assign dout_o = data_shift_buffer_d;
+  assign dout_o = data_shift_buffer_q;
 
 endmodule : uart_rx
 

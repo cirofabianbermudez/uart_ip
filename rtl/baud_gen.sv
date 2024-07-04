@@ -19,19 +19,19 @@ module baud_gen (
     output        tick_o
 );
 
-  logic [10:0] counter_q, counter_d;
+  logic [10:0] counter_d, counter_q;
   logic counter_done;
 
   always_ff @(posedge clk_i, posedge rst_i) begin
     if (rst_i) begin
-      counter_d <= 'd0;
+      counter_q <= 'd0;
     end else begin
-      counter_d <= counter_q;
+      counter_q <= counter_d;
     end
   end
 
-  assign counter_done = (counter_d == dvsr_i - 'd1) ? 1'b1 : 1'b0;
-  assign counter_q = (counter_done) ? 'd0 : counter_d + 'd1;
+  assign counter_done = (counter_q == dvsr_i - 'd1) ? 1'b1 : 1'b0;
+  assign counter_d = (counter_done) ? 'd0 : counter_q + 'd1;
 
   assign tick_o = counter_done;
 
