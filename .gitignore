@@ -1,5 +1,7 @@
 # Directories
 vivado/
+fmt_log/rtl/
+fmt_log/rtl_backup
 
 # C++
 *.o

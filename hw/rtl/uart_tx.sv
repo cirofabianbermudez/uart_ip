@@ -115,4 +115,3 @@ module uart_tx #(
   assign tx_o = tx_q;
 
 endmodule : uart_tx
-
