@@ -19,6 +19,7 @@ check:
 	@for file in $(TB_FILES); do \
 		echo "$$file"; \
 	done
+	@mkdir -p $(ROOT_DIR)/fmt_log
 
 lint:
 	@echo "Running Verible linting tool"
@@ -52,8 +53,8 @@ help:
 	@echo "---------------------------- Targets -----------------------------"
 	@echo "  all     : Run lint and format"
 	@echo "  check   : Display list of RTL and testbench files"
-	@echo "  lint    : Run Verible linter on RTL and testbench files"
-	@echo "  format  : Run Verible formatter on RTL and testbench files"
+	@echo "  lint    : Run Verible linter on RTL"
+	@echo "  format  : Run Verible formatter on RTL"
 	@echo "  help    : Display this help message"
 	@echo "=================================================================="
 	@echo ""	
