@@ -91,7 +91,7 @@ module uart_rx #(
       end
       STOP: begin
         if (sample_tick_i) begin
-          if (sample_tick_counter_q == (StopBitsTicks - 1)) begin
+          if (sample_tick_counter_q == (StopBitTicks - 1)) begin
             state_next = IDLE;
             rx_done_tick_o = 1'b1;
           end else begin
@@ -105,4 +105,3 @@ module uart_rx #(
   assign dout_o = data_shift_buffer_q;
 
 endmodule : uart_rx
-
