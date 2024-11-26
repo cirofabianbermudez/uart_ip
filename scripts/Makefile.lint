@@ -1,0 +1,145 @@
+##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+## [Filename]       Makefile.lint
+## [Project]        uart_ip
+## [Author]         Ciro Bermudez - cirofabian.bermudez@gmail.com
+## [Language]       GNU Makefile
+## [Created]        Nov 2024
+## [Description]    Makefile to lint and format the Verilog/SystemVerilog code
+## [Notes]          This code generates automatic backups when running the 
+##                  formating targets so you can recover the old version
+## [Status]         devel
+## [Revisions]      -
+##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+## common variables
+CUR_DATE := $(shell date +%Y-%m-%d_%H-%M-%S)
+GIT_ROOT := $(shell git rev-parse --show-toplevel)
+SCRIPTS_DIR := $(GIT_ROOT)/scripts
+
+## colors
+C_RED := \033[31m
+C_GRE := \033[32m
+C_BLU := \033[34m
+C_YEL := \033[33m
+C_ORA := \033[38;5;214m
+NC    := \033[0m 
+
+## directories
+RTL_DIR := $(GIT_ROOT)/hw/rtl
+TB_DIR := $(GIT_ROOT)/hw/tb
+FMT_DIR := $(GIT_ROOT)/fmt_log
+
+## files
+RTL_FILES := $(shell find $(RTL_DIR) -name "*.sv" -or -name "*.v")
+TB_FILES  := $(shell find $(TB_DIR) -name "*.sv" -or -name "*.v")
+LNT_RULES := $(GIT_ROOT)/.rules.verible_lint
+FMT_RULES := $(GIT_ROOT)/.rules.verible_format
+
+all: help
+
+.PHONY: check
+check: ## List the RTL and TB files
+	@echo -e "$(C_ORA)RTL files:$(NC)"
+	@for file in $(RTL_FILES); do \
+		echo "$$file"; \
+	done
+	@echo -e "$(C_ORA)Testbench files:$(NC)"
+	@for file in $(TB_FILES); do \
+		echo "$$file"; \
+	done
+	@echo -e "$(C_ORA)Checking for fmt_log/ directory$(NC)"
+	@if [ -d "$(FMT_DIR)" ]; then \
+		echo " - fmt_log/ directory exists"; \
+	else \
+		echo " - fmt_log/ directory does not exists"; \
+		mkdir -p $(FMT_DIR); \
+		echo " - Creating fmt_log/ directory"; \
+	fi
+
+.PHONY: lint
+lint: ## Lint all the code
+	@echo -e "$(C_ORA)Running Verible linting tool$(NC)"
+	@verible-verilog-lint -rules_config $(LNT_RULES) $(RTL_FILES) $(TB_FILES) || true
+
+.PHONY: lint-verilator
+lint-verilator: ## Lint all the code using Verilator (Linux only)
+	@echo -e "$(C_ORA)Running Verilator linting tool$(NC)"
+	verilator --lint-only -Wall -sv $(RTL_FILES) || true
+
+.PHONY: format-rtl
+format-rtl: check ## Format the RTL code [Inplace mode]
+	@echo -e "$(C_ORA)Running Verible formatting tool for RTL [Inplace mode]$(NC)"
+	@mkdir $(FMT_DIR)/rtl_backup_$(CUR_DATE)
+	@for dir in $(RTL_DIR); do \
+		cp -r $$dir $(FMT_DIR)/rtl_backup_$(CUR_DATE); \
+	done
+	@for file in $(RTL_FILES); do \
+		echo " - Formatting $$file"; \
+		verible-verilog-format --flagfile=$(FMT_RULES) $$file; \
+	done
+
+.PHONY: format-rtl-check
+format-rtl-check: check
+	@echo -e "$(C_ORA)Running Verible formatting tool for RTL [Check mode]$(NC)"
+	@mkdir $(FMT_DIR)/rtl_check_$(CUR_DATE)
+	@for dir in $(RTL_DIR); do \
+		cp -r $$dir $(FMT_DIR)/rtl_check_$(CUR_DATE); \
+	done
+	@files=$$(find $(FMT_DIR)/rtl_check_$(CUR_DATE) -name "*.sv" -or -name "*.v"); \
+	for file in $$files; do \
+		echo " - Formatting $$file"; \
+		verible-verilog-format --flagfile=$(FMT_RULES) $$file; \
+	done
+
+.PHONY: format-tb
+format-tb: check ## Format the TB code  [Inplace mode]
+	@echo -e "$(C_ORA)Running Verible formatting tool for TB [Inplace mode]$(NC)"
+	@mkdir $(FMT_DIR)/tb_backup_$(CUR_DATE)
+	@for dir in $(TB_DIR); do \
+		cp -r $$dir $(FMT_DIR)/tb_backup_$(CUR_DATE); \
+	done
+	@for file in $(TB_FILES); do \
+		echo " - Formatting $$file"; \
+		verible-verilog-format --flagfile=$(FMT_RULES) $$file; \
+	done
+
+.PHONY: format-tb-check
+format-tb-check: check
+	@echo -e "$(C_ORA)Running Verible formatting tool for TB [Check mode]$(NC)"
+	@mkdir $(FMT_DIR)/tb_check_$(CUR_DATE)
+	@for dir in $(TB_DIR); do \
+		cp -r $$dir $(FMT_DIR)/tb_check_$(CUR_DATE); \
+	done
+	@files=$$(find $(FMT_DIR)/tb_check_$(CUR_DATE) -name "*.sv" -or -name "*.v"); \
+	for file in $$files; do \
+		echo " - Formatting $$file"; \
+		verible-verilog-format --flagfile=$(FMT_RULES) $$file; \
+	done
+	
+.PHONY: format
+format: format-rtl format-tb ## Format the RTL and TB [Inplace mode]
+
+.PHONY: format-check
+format-check: format-rtl-check format-tb-check ## Format the RTL and TB [Preview mode]
+
+.PHONY: clean
+clean: ## Delete fmt_log/
+	rm -rf $(FMT_DIR)
+
+
+.PHONY: help
+help: ## Display help message
+	@echo ""
+	@echo "======================================================================"
+	@echo ""
+	@echo "Usage: make <target>"
+	@echo ""
+	@echo "Available targets:"
+	@echo ""
+	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "- make \033[36m%-18s\033[0m %s\n", $$1, $$2}'
+	@echo ""
+	@echo "Note: This code generates automatic backups when running the formating"
+	@echo "      targets under the fmt_log/ directory"
+	@echo ""
+	@echo "======================================================================"
+	@echo ""

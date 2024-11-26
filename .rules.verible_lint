@@ -1,0 +1,8 @@
++line-length=length:150
++mismatched-labels
++one-module-per-file
+-port-name-suffix
+-proper-parameter-declaration
++signal-name-style
++suspicious-semicolon
++uvm-macro-semicolon
