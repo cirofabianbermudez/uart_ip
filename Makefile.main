@@ -1,0 +1,43 @@
+##=============================================================================
+## [Filename]       Makefile.main
+## [Project]        uart_ip
+## [Author]         Ciro Bermudez - cirofabian.bermudez@gmail.com
+## [Language]       GNU Makefile
+## [Created]        Dec 2024
+## [Modified]       -
+## [Description]    Makefile to lint and format the RTL and TB code
+## [Notes]          It automatically creates a backup of the code
+## [Status]         stable
+## [Revisions]      -
+##=============================================================================
+
+# ================================  TARGETS  ==================================
+
+.DEFAULT_GOAL := all
+
+.PHONY: all
+all: help
+
+.PHONY: help
+help: ## Display help message
+	@echo ""
+	@echo -e "$(C_ORA)Help message...$(NC)"
+	@echo "======================================================================"
+	@echo "Usage: make <target> [mode=check|inplace]"
+	@echo ""
+	@echo "Available variables:"
+	@echo ""
+	@echo "    MODE=$(MODE)"
+	@echo ""
+	@echo "Available targets:"
+	@echo ""
+	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "- make \033[36m%-18s\033[0m %s\n", $$1, $$2}'
+	@echo ""
+	@echo "Examples:"
+	@echo ""
+	@echo "    make list"
+	@echo "    make lint"
+	@echo "    make format"
+	@echo ""
+	@echo "======================================================================"
+	@echo ""

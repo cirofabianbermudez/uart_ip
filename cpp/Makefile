@@ -1,4 +1,4 @@
-##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+##=============================================================================
 ## [Filename]       Makefile
 ## [Project]        uart_ip
 ## [Author]         Ciro Bermudez - cirofabian.bermudez@gmail.com
@@ -9,14 +9,32 @@
 ## [Notes]          -
 ## [Status]         devel
 ## [Revisions]      -
-##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+##=============================================================================
 
-## common variables
+# ===============================  VARIABLES  =================================
+
+# Miscellaneous variables
 CUR_DATE := $(shell date +%Y-%m-%d_%H-%M-%S)
-GIT_ROOT := $(shell git rev-parse --show-toplevel)
-CPP_DIR  := $(GIT_ROOT)/cpp
 
-## colors
+# Compiler and flags
+CXX := g++
+#CXXFLAGS := -Wall -Wextra -std=c++17
+CXXFLAGS := -std=c++23
+
+# Directories
+GIT_ROOT := $(shell git rev-parse --show-toplevel)
+SRC_DIR := src
+OBJ_DIR := obj
+BIN_DIR := bin
+
+# Output executable
+TARGET := $(BIN_DIR)/app
+
+# Files
+SRCS := $(wildcard $(SRC_DIR)/*.cpp)
+OBJS := $(patsubst $(SRC_DIR)/%.cpp, $(OBJ_DIR)/%.o, $(SRCS))
+
+# Colors
 C_RED := \033[31m
 C_GRE := \033[32m
 C_BLU := \033[34m
@@ -24,48 +42,53 @@ C_YEL := \033[33m
 C_ORA := \033[38;5;214m
 NC    := \033[0m 
 
-# Variables
-CXX = g++
-CXXFLAGS = -std=c++23
-SRCS = main.cpp
-OBJS = $(SRCS:.cpp=.o)
-TARGET = uart
+# ================================  TARGETS  ==================================
 
+.DEFAULT_GOAL := all
+
+.PHONY: all
 all: help
+#______________________________________________________________________________
 
-# Rule to compile every .cpp to a .o
-%.o: %.cpp
-	@echo "> Compiling $<"
+.PHONY: compile
+compile: $(TARGET) ## Compile the app
+#______________________________________________________________________________
+
+# Rule to compile source files to object files
+$(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp
+	@mkdir -p $(OBJ_DIR)
+	@echo -e "$(C_ORA)Compiled: $< -> $@ $(NC)"
 	$(CXX) $(CXXFLAGS) -c $< -o $@
+#______________________________________________________________________________
 
+# Rule to create the executable
 $(TARGET): $(OBJS)
-	@echo "> Linking object files"
-	$(CXX) $(CXXFLAGS) $(OBJS) -o $(TARGET) 
+	@mkdir -p $(BIN_DIR)
+	@echo -e "$(C_ORA)Linked: $@ $(NC)"
+	$(CXX) $(OBJS) -o $@
+#______________________________________________________________________________
 
 .PHONY: run
-run:
-	@echo "> Running $(TARGET)"
+run: ## Run C++ code
+	@echo -e "$(C_ORA)Running $(TARGET) $(NC)"
 	./$(TARGET)
+#______________________________________________________________________________
 
 .PHONY: clean
-clean:
-	@echo "> Removing *.exe and *.o"
-	rm -rf *.o *.exe *.txt *.png *.pdf $(TARGET)
+clean: ## Remove compilation and executable files
+	@echo -e "$(C_ORA)Removing compilation files$(NC)"
+	rm -rf $(OBJ_DIR) $(BIN_DIR)
+#______________________________________________________________________________
 
 .PHONY: help
 help: ## Display help message
 	@echo ""
-	@echo "============================================================="
-	@echo "Usage: make <target> simulator=vcs [mode=gui|tcl|batch] [variables]"
+	@echo "====================================================================="
+	@echo "Usage: make <target> "
 	@echo ""
 	@echo "Available targets:"
 	@echo ""
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "- make \033[36m%-15s\033[0m %s\n", $$1, $$2}'
 	@echo ""
-	@echo "Examples:"
-	@echo ""
-	@echo "   % make area"
-	@echo "   % make digital"
-	@echo "   % make ams"
-	@echo "============================================================="
+	@echo "====================================================================="
 	@echo ""
