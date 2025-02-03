@@ -25,21 +25,24 @@ module uart_rx #(
     output logic [7:0] dout_o
 );
 
+  // FSM States
   typedef enum {
-    IDLE,
-    START,
-    DATA,
-    STOP
+    ST_IDLE,
+    ST_START,
+    ST_DATA,
+    ST_STOP
   } state_type_e;
 
+  // Signal Declaration
   state_type_e state_reg, state_next;
   logic [3:0] sample_tick_counter_q, sample_tick_counter_d;
-  logic [2:0] data_bit_counter_q, data_bit_counter_d;
-  logic [7:0] data_shift_buffer_q, data_shift_buffer_d;
+  logic [2:0] data_bit_counter_q,    data_bit_counter_d;
+  logic [7:0] data_shift_buffer_q,   data_shift_buffer_d;
 
+  // FSMD State and Data Registers
   always_ff @(posedge clk_i, posedge rst_i) begin
     if (rst_i) begin
-      state_reg             <= IDLE;
+      state_reg             <= ST_IDLE;
       sample_tick_counter_q <= 'd0;
       data_bit_counter_q    <= 'd0;
       data_shift_buffer_q   <= 'd0;
@@ -51,6 +54,7 @@ module uart_rx #(
     end
   end
 
+  // FSMD Next-State Logic
   always_comb begin
     state_next            = state_reg;
     rx_done_tick_o        = 1'b0;
@@ -58,16 +62,16 @@ module uart_rx #(
     data_bit_counter_d    = data_bit_counter_q;
     data_shift_buffer_d   = data_shift_buffer_q;
     case (state_reg)
-      IDLE: begin
+      ST_IDLE: begin
         if (~rx_i) begin
-          state_next            = START;
+          state_next            = ST_START;
           sample_tick_counter_d = 'd0;
         end
       end
-      START: begin
+      ST_START: begin
         if (sample_tick_i) begin
           if (sample_tick_counter_q == 'd7) begin
-            state_next            = DATA;
+            state_next            = ST_DATA;
             sample_tick_counter_d = 'd0;
             data_bit_counter_d    = 'd0;
           end else begin
@@ -75,13 +79,13 @@ module uart_rx #(
           end
         end
       end
-      DATA: begin
+      ST_DATA: begin
         if (sample_tick_i) begin
           if (sample_tick_counter_q == 'd15) begin
             sample_tick_counter_d = 'd0;
             data_shift_buffer_d   = {rx_i, data_shift_buffer_q[7:1]};
             if (data_bit_counter_q == (WordLength - 1)) begin
-              state_next = STOP;
+              state_next = ST_STOP;
             end else begin
               data_bit_counter_d = data_bit_counter_q + 'd1;
             end
@@ -90,10 +94,10 @@ module uart_rx #(
           end
         end
       end
-      STOP: begin
+      ST_STOP: begin
         if (sample_tick_i) begin
           if (sample_tick_counter_q == (StopBitTicks - 1)) begin
-            state_next = IDLE;
+            state_next = ST_IDLE;
             rx_done_tick_o = 1'b1;
           end else begin
             sample_tick_counter_d = sample_tick_counter_q + 'd1;
@@ -103,6 +107,7 @@ module uart_rx #(
     endcase
   end
 
+  // Output
   assign dout_o = data_shift_buffer_q;
 
 endmodule : uart_rx

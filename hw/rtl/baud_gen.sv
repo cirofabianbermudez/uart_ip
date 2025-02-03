@@ -19,9 +19,11 @@ module baud_gen (
     output        tick_o
 );
 
+  // Signal Declaration
   logic [10:0] counter_d, counter_q;
   logic counter_done;
 
+  // Register
   always_ff @(posedge clk_i, posedge rst_i) begin
     if (rst_i) begin
       counter_q <= 'd0;
@@ -30,9 +32,11 @@ module baud_gen (
     end
   end
 
+  // Next-State Logic
   assign counter_done = (counter_q == dvsr_i - 'd1) ? 1'b1 : 1'b0;
   assign counter_d = (counter_done) ? 'd0 : counter_q + 'd1;
 
+  // Output 
   assign tick_o = counter_done;
 
 endmodule : baud_gen

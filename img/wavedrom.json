@@ -1,0 +1,5 @@
+{signal: [
+  {},
+  {name: 'Serial Line', wave: '10========1.', data: ['d0', 'd1', 'd2', 'd3', 'd4', 'd5', 'd6', 'd7'], period: 1, phase: 0.0, },
+  {},
+]}

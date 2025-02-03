@@ -10,11 +10,12 @@
 //                  The number of stop bits can be set to 1, 1.5, or 2.
 //                  This code does not consider the parity bit.
 // [Status]         Stable
+// [Revisions]      -
 ///////////////////////////////////////////////////////////////////////////////////
 
 module uart_ip #(
-    parameter WordLength   = 8,
-    parameter StopBitTicks = 16
+    parameter int WordLength   = 8,
+    parameter int StopBitTicks = 16
 ) (
     input         clk_i,
     input         rst_i,
@@ -62,4 +63,4 @@ module uart_ip #(
     .tx_done_tick_o(tx_done_tick_o)
   );
 
-endmodule
+endmodule : uart_ip

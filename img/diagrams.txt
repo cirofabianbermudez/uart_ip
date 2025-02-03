@@ -1,0 +1,68 @@
+{signal: [
+  {name: 'MOSI', wave: 'x=..=.=.=.=.=.=.=.xx', data: ['b7', 'b6', 'b5', 'b4', 'b3', 'b2', 'b1', 'b0'], period: 0.5, phase: 0.0},
+  {name: 'MISO', wave: 'xx=.=.=.=.=.=.=.=.xx', data: ['b7', 'b6', 'b5', 'b4', 'b3', 'b2', 'b1', 'b0'], period: 0.5, phase: 0.0},
+  {name: 'SCLK', wave: '0..1010101010101010.', period: 0.5},
+  {name: 'CS',   wave: '10.................1', period: 0.5},
+]}
+
+
+{signal: [
+  {name: 'Serial Line', wave: '10========1.', data: ['d0', 'd1', 'd2', 'd3', 'd4', 'd5', 'd6', 'd7'], period: 1, phase: 0.0, },
+]}
+
+
+{signal: [
+   ['Mode 0',
+    {name: 'MOSI', wave: 'x=.=.=.=.=.=.=.=.xxx', data: ['b7', 'b6', 'b5', 'b4', 'b3', 'b2', 'b1', 'b0'], period: 0.5, phase: 0.0},
+  	{name: 'MISO', wave: 'x=.=.=.=.=.=.=.=.xxx', data: ['b7', 'b6', 'b5', 'b4', 'b3', 'b2', 'b1', 'b0'], period: 0.5, phase: 0.0},
+  	{name: 'SCLK', wave: '0.1010101010101010..', period: 0.5},
+    {name: 'CS',   wave: '10................1.', period: 0.5},
+   ],
+   {},
+   ['Mode 1',
+    {name: 'MOSI', wave: 'x.=.=.=.=.=.=.=.=.xx', data: ['b7', 'b6', 'b5', 'b4', 'b3', 'b2', 'b1', 'b0'], period: 0.5, phase: 0.0},
+  	{name: 'MISO', wave: 'x.=.=.=.=.=.=.=.=.xx', data: ['b7', 'b6', 'b5', 'b4', 'b3', 'b2', 'b1', 'b0'], period: 0.5, phase: 0.0},
+  	{name: 'SCLK', wave: '0.1010101010101010..', period: 0.5},
+    {name: 'CS',   wave: '10................1.', period: 0.5},
+   ],
+   {},  
+   ['Mode 2',
+    {name: 'MOSI', wave: 'x=.=.=.=.=.=.=.=.xx.', data: ['b7', 'b6', 'b5', 'b4', 'b3', 'b2', 'b1', 'b0'], period: 0.5, phase: 0.0},
+  	{name: 'MISO', wave: 'x=.=.=.=.=.=.=.=.xx.', data: ['b7', 'b6', 'b5', 'b4', 'b3', 'b2', 'b1', 'b0'], period: 0.5, phase: 0.0},
+  	{name: 'SCLK', wave: '1.0101010101010101..', period: 0.5},
+    {name: 'CS',   wave: '10................1.', period: 0.5},
+   ],
+   {},   
+   ['Mode 3',
+    {name: 'MOSI', wave: 'x.=.=.=.=.=.=.=.=.xx', data: ['b7', 'b6', 'b5', 'b4', 'b3', 'b2', 'b1', 'b0'], period: 0.5, phase: 0.0},
+  	{name: 'MISO', wave: 'x.=.=.=.=.=.=.=.=.xx', data: ['b7', 'b6', 'b5', 'b4', 'b3', 'b2', 'b1', 'b0'], period: 0.5, phase: 0.0},
+  	{name: 'SCLK', wave: '1.0101010101010101..', period: 0.5},
+    {name: 'CS',   wave: '10................1.', period: 0.5},
+   ],
+
+]}
+
+
+
+{signal: [
+    {name: 'MOSI', wave: 'x.=.=.=.=.=.=.=.=.x....=.=.=.=', data: ['b7', 'b6', 'b5', 'b4', 'b3', 'b2', 'b1', 'b0','b7', 'b6', 'b5' ], period: 0.5, phase: 0.0},
+    {name: 'SCLK', wave: '0..1010101010101010.....101010', period: 0.5},
+    {name: 'CS',   wave: '10.................1..0.......', period: 0.5},
+
+   {},
+
+]}
+  
+  
+{signal: [
+    {name: 'clk', wave: 'n..', period: 6, phase: 0.0},
+    {name: 'b_reg', wave: '=....', data: ["3"], period: 3},
+    {name: 'a_reg',   wave: '==.=.', data: ["9", "7", "5"], period: 3},
+
+   {},
+
+]}
+  
+https://www.analog.com/en/resources/technical-books/analog-digital-conversion-1986.html
+http://www.bitsavers.org/components/datel/Datel_Data_Acquisition_And_Conversion_Handbook_Mar1987.pdf
+https://www.analog.com/en/resources/analog-dialogue/articles/analog-to-digital-converter-architectures-and-choices.html#:~:text=The%20most%20popular%20ADC%20architectures,%2C%20a%20charge%2Dbalancing%20type.
