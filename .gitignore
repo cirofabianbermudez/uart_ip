@@ -3,6 +3,10 @@ vivado/
 fmt_log/rtl/
 fmt_log/rtl_backup
 
+# Files
+*.pdf
+*.epub
+
 # C++
 *.o
 *.lib
