@@ -8,7 +8,12 @@ fmt_log/rtl_backup
 *.epub
 
 # C++
+bin/
+obj/
 *.o
 *.lib
 *.exe
-*.out
+
+# Python
+venv/
+.venv/

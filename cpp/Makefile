@@ -16,16 +16,16 @@
 # Miscellaneous variables
 CUR_DATE := $(shell date +%Y-%m-%d_%H-%M-%S)
 
-# Compiler and flags
-CXX := g++
-#CXXFLAGS := -Wall -Wextra -std=c++17
-CXXFLAGS := -std=c++23
-
 # Directories
-GIT_ROOT := $(shell git rev-parse --show-toplevel)
 SRC_DIR := src
 OBJ_DIR := obj
 BIN_DIR := bin
+INC_DIR := include
+
+# Compiler and flags
+CXX := g++
+CXXFLAGS := -Wall -Wextra -std=c++17 -I./$(INC_DIR)
+#CXXFLAGS := -std=c++23
 
 # Output executable
 TARGET := $(BIN_DIR)/app
@@ -48,6 +48,10 @@ NC    := \033[0m
 
 .PHONY: all
 all: help
+
+check:
+	@echo "$(SRCS)"
+	@echo "$(OBJS)"
 #______________________________________________________________________________
 
 .PHONY: compile
@@ -65,7 +69,7 @@ $(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp
 $(TARGET): $(OBJS)
 	@mkdir -p $(BIN_DIR)
 	@echo -e "$(C_ORA)Linked: $@ $(NC)"
-	$(CXX) $(OBJS) -o $@
+	$(CXX) $(CXXFLAGS) $(OBJS) -o $@
 #______________________________________________________________________________
 
 .PHONY: run
