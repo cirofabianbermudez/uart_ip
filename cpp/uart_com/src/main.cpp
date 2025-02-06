@@ -14,6 +14,8 @@
 
 #include <iostream>
 #include <string>
+#include <thread>
+#include <chrono>
 #include "serial/serial.h"
 
 int main(int argc, char** argv){
@@ -38,16 +40,36 @@ int main(int argc, char** argv){
   std::string send_buffer;
   std::string receive_buffer;
 
-  std::cout << "Enter a message: " << std::endl;
-  std::getline(std::cin, send_buffer);
-
+  // Write to the serial port
+  std::cout << "[INFO]: Writing data" << std::endl;
+  send_buffer = "ciro fabian bermudez marquez";
   my_serial.write(send_buffer);
 
-  receive_buffer = my_serial.read(1);
+  // Write to the serial port one by one
+  for (char c : send_buffer) {
+    my_serial.write(std::string(1, c));
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+  }
 
+  // Reading from the serial port
+  std::cout << "[INFO]: Reading data" << std::endl;
+  receive_buffer = my_serial.read(4);
   std::cout << "Received message:" << std::endl;
   std::cout << receive_buffer << std::endl;
   std::cout << std::endl;
+
+  // Sending multiple values
+  while (true) {
+    std::cout << "Enter a character: " << std::endl;
+    std::getline(std::cin, send_buffer);
+
+    if ("exit" == send_buffer) {
+      break;
+    }
+
+    my_serial.write(send_buffer);
+
+  }
 
   my_serial.close();
   
