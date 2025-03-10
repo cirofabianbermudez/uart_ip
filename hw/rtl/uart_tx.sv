@@ -114,6 +114,7 @@ module uart_tx #(
           end
         end
       end
+      default: begin end
     endcase
   end
 

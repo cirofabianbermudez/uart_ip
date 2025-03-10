@@ -26,11 +26,8 @@ module uart_ip #(
     input         rx_i,
     input  [7:0]  w_data_i,
     input  [10:0] dvsr_i,
-    //input         start_tx_i,
     output [7:0]  r_data_o,
     output        tx_o,
-    //output        rx_done_tick_o,
-    //output        tx_done_tick_o,
     output        tx_full_o,
     output        rx_empty_o
 );
@@ -101,7 +98,7 @@ module uart_ip #(
     .clk_i(clk_i),
     .rst_i(rst_i),
     .rd_i(rd_uart_i),
-    .wr_i(rx_done_tick,),
+    .wr_i(rx_done_tick),
     .w_data_i(rx_data_out),
     .r_data_o(r_data_o),
     .empty_o(rx_empty_o),

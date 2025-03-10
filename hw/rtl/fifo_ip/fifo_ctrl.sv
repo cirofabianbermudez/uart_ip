@@ -90,7 +90,6 @@ module fifo_ctrl #(
         r_ptr_d = r_ptr_succ;
       end
       default: begin end
-      end
     endcase
   end
 

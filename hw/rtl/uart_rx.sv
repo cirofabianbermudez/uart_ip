@@ -104,6 +104,7 @@ module uart_rx #(
           end
         end
       end
+      default: begin end
     endcase
   end
 
