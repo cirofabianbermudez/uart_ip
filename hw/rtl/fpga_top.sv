@@ -13,7 +13,7 @@
 module top #(
     parameter int WordLength   = 8,
     parameter int StopBitTicks = 16,
-    parameter int FifoAddrBits = 2
+    parameter int FifoAddrBits = 3
 ) (
     input         clk_i,
     input         rst_i,
